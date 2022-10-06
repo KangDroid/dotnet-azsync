@@ -1,0 +1,40 @@
+name: Deploy Common Libraries to Nuget
+
+# Controls when the workflow will run
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  release_version: 0.0.1
+  project_name: "dotnet-azsync"
+  package_id: "DotnetAzSync"
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "C# Deployment"
+  csharp_deployment:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Setup .NET 6.x
+      - name: Setup .NET Core SDK '6.x'
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.x'
+      
+      # Do work script
+      - name: Execute CSharp Release Script
+        run: |
+          cd ${{ env.project_name }}
+          sed -i "s/<Version>.*/<Version>${{ env.release_version }}<\/Version>/g" ${{ env.project_name }}.csproj
+          cat ${{ env.project_name }}.csproj
+          dotnet pack
+          dotnet nuget push bin/Debug/${{ env.package_id }}.${{ env.release_version }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
