@@ -1,8 +1,8 @@
 using Microsoft.Build.Construction;
 
-namespace KangDroid.Azsync;
+namespace KangDroid.Azsync.Service;
 
-public class ProjectFileService
+public class UserSecretService
 {
     public async Task<AzSyncResponse<object>> ExecuteAsync(string obj)
     {
@@ -28,7 +28,7 @@ public class ProjectFileService
         await using var file = File.OpenWrite(secretPath);
         await using var streamWriter = new StreamWriter(file);
         await streamWriter.WriteAsync(obj);
-        
+
         // Print out Information
         Console.WriteLine($"Successfully wrote configuration settings to {secretPath}");
 

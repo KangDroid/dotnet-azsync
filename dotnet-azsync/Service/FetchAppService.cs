@@ -3,9 +3,9 @@ using Azure.Identity;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppService;
 
-namespace KangDroid.Azsync;
+namespace KangDroid.Azsync.Service;
 
-public class FetchAppService
+public class FetchAppService : IConfigurationFetcher
 {
     private readonly string _appServiceName;
     private readonly ArmClient _armClient;
@@ -20,7 +20,7 @@ public class FetchAppService
         _slotName = slotName;
     }
 
-    public async Task<AzSyncResponse<Dictionary<string, string>>> ExecuteAsync()
+    public async Task<AzSyncResponse<Dictionary<string, string>>> GetConfigurations()
     {
         var subscription = await _armClient.GetDefaultSubscriptionAsync();
 

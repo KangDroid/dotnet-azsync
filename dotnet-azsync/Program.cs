@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.CommandLine;
-using KangDroid.Azsync;
+using KangDroid.Azsync.Service;
 using Newtonsoft.Json;
 
 // root command
@@ -21,10 +21,10 @@ var command = new Command("appservice", "Fetch App Service configuration to loca
 command.SetHandler(async (name, resourceGroup, slot) =>
 {
     var fetchService = new FetchAppService(resourceGroup, name, slot);
-    var result = await fetchService.ExecuteAsync();
+    var result = await fetchService.GetConfigurations();
     if (result.IsError) Console.WriteLine(result.Message);
 
-    var projectFileService = new ProjectFileService();
+    var projectFileService = new UserSecretService();
     var response = await projectFileService.ExecuteAsync(JsonConvert.SerializeObject(result.Result));
 
     if (response.IsError) Console.WriteLine(response.Message);
