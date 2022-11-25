@@ -4,15 +4,21 @@ namespace KangDroid.Azsync.Service;
 
 public class UserSecretService
 {
-    public async Task<AzSyncResponse<object>> ExecuteAsync(string obj)
+    public async Task<AzSyncResponse<object>> ExecuteAsync(string obj, string? overrideableProjectDirectory = null)
     {
-        // Search *.csproj
-        var fileList = Directory.GetFiles(".", "*.csproj");
-        if (fileList.Length != 1)
-            return new AzSyncResponse<object>($"Cannot detect csproj. Found {fileList.Length} csproj files.");
+        // Get ProjectFile
+        var projectFile = GetProjectPath(overrideableProjectDirectory);
+        if (projectFile == null)
+        {
+            return new AzSyncResponse<object>
+            {
+                IsError = true,
+                Message = "Cannot get project path!"
+            };
+        }
 
         // read it
-        var projectRoot = ProjectRootElement.Open(fileList[0]);
+        var projectRoot = ProjectRootElement.Open(projectFile);
         var secretElement = projectRoot.Properties.FirstOrDefault(a => a.Name == "UserSecretsId");
 
         // Get Path
@@ -36,5 +42,16 @@ public class UserSecretService
         {
             IsError = false
         };
+    }
+
+    private string? GetProjectPath(string? projectDirectory)
+    {
+        if (projectDirectory == null)
+        {
+            var fileList = Directory.GetFiles(".", "*.csproj");
+            return fileList.Length != 1 ? null : fileList[0];
+        }
+
+        return projectDirectory;
     }
 }
