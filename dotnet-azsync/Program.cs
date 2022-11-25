@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.CommandLine;
+using KangDroid.Azsync.Models;
 using KangDroid.Azsync.Service;
 using Newtonsoft.Json;
 
@@ -52,8 +53,57 @@ localSubcommand.SetHandler(async projectPath =>
     if (response.IsError) Console.WriteLine(response.Message);
 }, projectOption);
 
+// Connection Strings Command Generator
+var connectionStringPath = new Option<string>("--connection-json-path", "[Required] Connection String(Json) Path")
+{
+    IsRequired = true
+};
+var commandGenerator = new Command("connection-generate",
+    "[Development] Produces AZ CLI Shell Script for updating connection strings.")
+{
+    appServiceNameOption,
+    resourceGroupOption,
+    appServiceSlotOption,
+    connectionStringPath
+};
+commandGenerator.SetHandler(async (name, resourceGroup, slot, connectionStringFilePath) =>
+{
+    // az webapp config connection-string set -g ${resourceGroup} -n ${serviceName} -t ${eachJsonSettings[i].type} --settings ${eachJsonSettings[i].name}='${eachJsonSettings[i].value}'
+
+    if (!File.Exists(connectionStringFilePath))
+    {
+        Console.WriteLine($"Error: Cannot get connection string path: {connectionStringPath}");
+        return;
+    }
+
+    await using var file = File.OpenRead(connectionStringFilePath);
+    using var stream = new StreamReader(file);
+    var str = await stream.ReadToEndAsync();
+    var connectionList = JsonConvert.DeserializeObject<List<LocalConnectionStrings>>(str);
+
+    foreach (var eachConnection in connectionList)
+    {
+        var slotEnabled = slot == null ? "" : $"-s {slot}";
+        var basicCommand = "";
+
+        if (eachConnection.SlotSetting)
+        {
+            basicCommand =
+                $"az webapp config connection-string set -g {resourceGroup} -n {name} {slotEnabled} -t {eachConnection.Type} --slot-settings \"{eachConnection.Name}='{eachConnection.Value}'\"";
+        }
+        else
+        {
+            basicCommand =
+                $"az webapp config connection-string set -g {resourceGroup} -n {name} {slotEnabled} -t {eachConnection.Type} --settings \"{eachConnection.Name}='{eachConnection.Value}'\"";
+        }
+
+        Console.WriteLine(basicCommand);
+    }
+}, appServiceNameOption, resourceGroupOption, appServiceSlotOption, connectionStringPath);
+
 // Add Subcommands to RootCommand
 rootCommand.AddCommand(appServiceCommand);
 rootCommand.AddCommand(localSubcommand);
+rootCommand.AddCommand(commandGenerator);
 
 await rootCommand.InvokeAsync(args);
