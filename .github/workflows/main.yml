@@ -8,7 +8,7 @@ on:
       - main
 
 env:
-  release_version: 0.0.1
+  release_version: 0.0.2
   project_name: "dotnet-azsync"
   package_id: "DotnetAzSync"
 
